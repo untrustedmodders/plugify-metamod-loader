@@ -13,15 +13,10 @@
  */
 
 #include "mm_plugin.hpp"
-#include "mm_vhook.hpp"
 
 #include <igameevents.h>
 #include <igamesystem.h>
 #include <iserver.h>
-
-#include <sourcehook/sourcehook_pibuilder.h>
-#include <sourcehook/sourcehook_impl.h>
-#include <sourcehook/sourcehook_impl_chookmaninfo.h>
 
 #include <plugify/assembly.hpp>
 #include <plugify/compat_format.hpp>
@@ -41,12 +36,9 @@
 #include <type_traits>
 
 using namespace plugify;
-using namespace SourceHook;
-using namespace SourceHook::Impl;
 
 mm::PlugifyPlugin g_Plugin;
 PLUGIN_EXPOSE(PlugifyPlugin, g_Plugin);
-SourceHook::IHookManagerAutoGen* g_pHookManager = nullptr;
 
 #define CONPRINT(x) g_Plugin.m_logger->Log(LS_MESSAGE, Color(255, 255, 0, 255), x)
 #define CONPRINTE(x) g_Plugin.m_logger->Log(LS_WARNING, Color(255, 0, 0, 255), x)
@@ -594,8 +586,6 @@ namespace mm {
 		GET_V_IFACE_CURRENT(GetServerFactory, g_pSource2Server, ISource2Server, SOURCE2SERVER_INTERFACE_VERSION);
 		GET_V_IFACE_CURRENT(GetEngineFactory, g_pNetworkServerService, INetworkServerService, NETWORKSERVERSERVICE_INTERFACE_VERSION);
 
-		g_pHookManager = static_cast<SourceHook::IHookManagerAutoGen *>(ismm->MetaFactory(MMIFACE_SH_HOOKMANAUTOGEN, NULL, NULL));
-
 		g_SMAPI->AddListener(this, &m_listener);
 
 		ConVar_Register(FCVAR_RELEASE | FCVAR_SERVER_CAN_EXECUTE | FCVAR_GAMEDLL);
@@ -608,11 +598,6 @@ namespace mm {
 			int offset = GetVirtualTableIndex(&IGameSystem::ServerGamePostSimulate);
 			_ServerGamePostSimulate = HookMethod(&table, &ServerGamePostSimulate, offset);
 		}
-
-		/*if (g_SHPtr != nullptr) {
-			int offset = GetVirtualTableIndex(&ISourceHook::SetupHookLoop);
-			_SetupHookLoop = HookMethod(g_SHPtr, &SetupHookLoop, offset);
-		}*/
 
 		m_context = MakePlugify();
 
@@ -710,20 +695,3 @@ SMM_API ISmmPlugin* Plugify_ISmmPlugin() {
 SMM_API PluginId Plugify_Id() {
 	return g_PLID;
 }
-
-SMM_API SourceHook::ISourceHook* Plugify_SourceHook() {
-	return g_SHPtr;
-}
-
-SMM_API mm::HookManager* Plugify_CreateHook(void* iface, mm::DataType returnType, std::span<const mm::DataType> paramsType, void* function, int offset, bool post) {
-	return new mm::HookManager(iface, returnType, paramsType, function, offset, post);
-}
-
-SMM_API void Plugify_DeleteHook(mm::HookManager* hook) {
-	delete hook;
-}
-
-SMM_API void Plugify_HookSetRes(META_RES res) {
-	g_SHPtr->SetRes(res);
-}
-
