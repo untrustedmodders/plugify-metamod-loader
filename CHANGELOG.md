@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.0](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v1.1.15...v2.0.0) (2025-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to a new core
+
+### Features
+
+* update to a new core ([366fe56](https://github.com/untrustedmodders/plugify-metamod-loader/commit/366fe5652cbe5a42c155c4bff16342dfb4231802))
+
+
+### Bug Fixes
+
+* add lua repo to config ([e15237c](https://github.com/untrustedmodders/plugify-metamod-loader/commit/e15237c40fe3b2167a830924356c36348d1db492))
+* bump to c++23 ([c8bd710](https://github.com/untrustedmodders/plugify-metamod-loader/commit/c8bd710606e4e18b59b54eb74b0923d3d7fe6235))
+* linux build ([38c7728](https://github.com/untrustedmodders/plugify-metamod-loader/commit/38c7728e14f35b6b39c86643590e2da9cfc9a223))
+* remove sourcehook fix ([1b67fac](https://github.com/untrustedmodders/plugify-metamod-loader/commit/1b67fac8d20ffddba814444aaf9e1bdeee211f2e))
+* update deps ([c1a613e](https://github.com/untrustedmodders/plugify-metamod-loader/commit/c1a613edc0b4d829add110ef2537cedfdfea0a1f))
+
 ## [1.1.15](https://github.com/untrustedmodders/mms2-plugify/compare/v1.1.14...v1.1.15) (2025-07-30)
 
 
