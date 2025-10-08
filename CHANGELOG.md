@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.1...v2.0.2) (2025-10-08)
+
+
+### Bug Fixes
+
+* add missing copy flag ([1deb1fc](https://github.com/untrustedmodders/plugify-metamod-loader/commit/1deb1fc5b0f823f5f3a43ba890d0646fc3bd9467))
+
 ## [2.0.1](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.0...v2.0.1) (2025-10-08)
 
 
