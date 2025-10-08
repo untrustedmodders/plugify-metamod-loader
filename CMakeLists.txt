@@ -1,8 +1,10 @@
-# mms2-plugify
+# plugify-metamod-loader
 # Copyright (C) 2023-2025 untrustedmodders
 # Licensed under the GPLv3 license. See LICENSE file in the project root for details.
 
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if(POLICY CMP0092)
 	cmake_policy(SET CMP0092 NEW) # Don't add -W3 warning level by default.
@@ -12,24 +14,37 @@ endif()
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" VERSION_FILE_CONTENTS)
 string(STRIP "${VERSION_FILE_CONTENTS}" VERSION_FILE_CONTENTS)
 set(MMS2_VERSION "${VERSION_FILE_CONTENTS}" CACHE STRING "Set version name")
+set(MMS2_PACKAGE "plugify" CACHE STRING "Set package name")
 string(REPLACE "v" "" MMS2_VERSION "${MMS2_VERSION}")
 string(REGEX REPLACE "[.+-]" ";" MMS2_VERSION_LIST ${MMS2_VERSION})
 list(GET MMS2_VERSION_LIST 0 MMS2_VERSION_MAJOR)
 list(GET MMS2_VERSION_LIST 1 MMS2_VERSION_MINOR)
 list(GET MMS2_VERSION_LIST 2 MMS2_VERSION_PATCH)
 
-project(mms2-plugify
+project(plugify-metamod-loader
 		VERSION "${MMS2_VERSION_MAJOR}.${MMS2_VERSION_MINOR}.${MMS2_VERSION_PATCH}"
-		DESCRIPTION "Plugify MMS2 Core"
-		HOMEPAGE_URL "https://github.com/untrustedmodders/mms2-plugify"
+		DESCRIPTION "Plugify Metamod Loader"
+		HOMEPAGE_URL "https://github.com/untrustedmodders/plugify-metamod-loader"
 		LANGUAGES C CXX
 )
 
-string(REGEX REPLACE "^[^-]*-" "" PROJECT_NAME_SUBSTRING "${PROJECT_NAME}")
-string(TOLOWER "${PROJECT_NAME_SUBSTRING}" PROJECT_NAME_LOWER)
-string(TOUPPER "${PROJECT_NAME_SUBSTRING}" PROJECT_NAME_UPPER)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+#set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
-set(PROJECT_OUTPUT_NAME "${PROJECT_NAME_SUBSTRING}")
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug|Devel|MinSizeRel|RelWithDebInfo|Release")
+	message(STATUS "CMAKE_BUILD_TYPE not set, defaulting to Release.")
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(UNIX AND NOT APPLE)
+	set(LINUX TRUE)
+endif()
 
 set(PROJECT_AUTHOR "Untrusted Modders Team")
 set(PROJECT_DESCRIPTION_FULL "Metamod:Source Plugify plugin")
@@ -38,90 +53,163 @@ string(TIMESTAMP PROJECT_BUILD_DATE "%Y-%m-%d")
 string(TIMESTAMP PROJECT_BUILD_TIME "%H:%M:%S")
 string(TIMESTAMP PROJECT_BUILD_DATE_YEAR "%Y")
 
-set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(SYMBOLS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/sym")
-set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+#
+# Plugify
+#
+set(PLUGIFY_BUILD_OBJECT_LIB ON CACHE INTERNAL "")
+set(PLUGIFY_BUILD_TESTS OFF CACHE INTERNAL "")
+if(LINUX)
+	set(PLUGIFY_USE_STATIC_STDLIB ON CACHE INTERNAL "")
+	set(PLUGIFY_USE_ABI0 OFF CACHE INTERNAL "")
+endif()
+add_subdirectory(external/plugify)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#
+# Source SDK
+#
+set(SOURCESDK_LINK_STRIP_CPP_EXPORTS ON CACHE INTERNAL "")
+set(SOURCESDK_LINK_STEAMWORKS OFF CACHE INTERNAL "")
+set(SOURCESDK_MALLOC_OVERRIDE OFF CACHE INTERNAL "")
+set(SOURCESDK_COMPILE_PROTOBUF OFF CACHE INTERNAL "")
+set(SOURCESDK_CONFIGURE_EXPORT_MAP OFF CACHE INTERNAL "")
+set(SOURCESDK_USE_ABI0 OFF CACHE INTERNAL "")
+add_subdirectory(external/sourcesdk)
 
-function(set_or_external_dir VAR_NAME TARGET)
-	if(${VAR_NAME})
-		file(TO_CMAKE_PATH "${${VAR_NAME}}" ${VAR_NAME})
-	else()
-		set(${VAR_NAME} "${EXTERNAL_DIR}/${TARGET}")
-	endif()
+#
+# Dynlibutils
+#
+set(DYNLIBUTILS_USE_ABI0 OFF CACHE INTERNAL "")
+add_subdirectory(external/dynlibutils)
 
-	set(${VAR_NAME} "${${VAR_NAME}}" PARENT_SCOPE)
-endfunction()
+#
+# Main
+#
+file(GLOB_RECURSE SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/*.cpp")
 
-set_or_external_dir(METAMOD_DIR "metamod-source")
-set_or_external_dir(PLUGIFY_DIR "plugify")
-set_or_external_dir(SOURCESDK_DIR "sourcesdk")
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
-include(cmake/platform/shared.cmake)
-include(cmake/metamod.cmake)
-include(cmake/plugify.cmake)
-include(cmake/sourcesdk.cmake)
+#
+# Dependencies
+#
+include(FetchCLI)
+include(FetchReproc)
+find_package(Threads REQUIRED)
 
-file(GLOB_RECURSE SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${SOURCE_DIR}/*.cpp")
+set(MMS2_LINK_LIBRARIES plugify::plugify glaze::glaze Threads::Threads reproc++ cpp-memory_utils CLI11 sourcesdk::sourcesdk)
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${METAMOD_SOURCESDK_SOURCE_FILES})
+if(NOT COMPILER_SUPPORTS_FORMAT)
+	#set(MMS2_LINK_LIBRARIES ${MMS2_LINK_LIBRARIES} fmt::fmt-header-only)
+endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-		C_STANDARD 11
-		C_STANDARD_REQUIRED ON
-		C_EXTENSIONS OFF
+target_link_libraries(${PROJECT_NAME} PRIVATE ${MMS2_LINK_LIBRARIES})
 
-		CXX_STANDARD 23
-		CXX_STANDARD_REQUIRED ON
-		CXX_EXTENSIONS OFF
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${MMS2_PACKAGE})
+
+if(WIN32)
+	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(APPLE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
+endif()
+
+if(APPLE)
+	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/sym/exported_symbols.lds")
+elseif(UNIX)
+	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/sym/version_script.lds")
+endif()
+
+if(WIN32)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX=1)
+endif()
+
+if(MSVC)
+	target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+else()
+	target_compile_options(${PROJECT_NAME} PRIVATE -Wextra -Wshadow -Wconversion) # -Werror -Wpedantic
+endif()
+
+set(METAMOD_COMPILE_DEFINITIONS
+		META_PLUGIN_AUTHOR="${PROJECT_AUTHOR}"
+		META_PLUGIN_PREFIX="${PROJECT_NAME_SUBSTRING}"
+		META_PLUGIN_PREFIX_LOWER="${PROJECT_NAME_LOWER}"
+		META_PLUGIN_PREFIX_UPPER="${PROJECT_NAME_UPPER}"
+		META_PLUGIN_NAME="${PROJECT_DESCRIPTION}"
+		META_PLUGIN_DESCRIPTION="${PROJECT_DESCRIPTION_FULL}"
+		META_PLUGIN_URL="${PROJECT_HOMEPAGE_URL}"
+		META_PLUGIN_LICENSE="${PROJECT_LICENSE}"
+		META_PLUGIN_VERSION="${PROJECT_VERSION}"
+		META_PLUGIN_DATE="${PROJECT_BUILD_DATE} ${PROJECT_BUILD_TIME}"
+		META_PLUGIN_LOG_TAG="${PROJECT_NAME_UPPER}"
+
+		META_IS_SOURCE2
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_OUTPUT_NAME})
+set(MMS2_GAME_NAME "csgo" CACHE INTERNAL "Set game name")
+set(MMS2_COMPILE_DEFINITIONS
+		MMS2_PLATFORM_WINDOWS=$<BOOL:${WIN32}>
+		MMS2_PLATFORM_APPLE=$<BOOL:${APPLE}>
+		MMS2_PLATFORM_LINUX=$<BOOL:${LINUX}>
+		MMS2_LIBRARY_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		MMS2_LIBRARY_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+		MMS2_EXECUTABLE_SUFFIX="${CMAKE_EXECUTABLE_SUFFIX}"
+		MMS2_EXECUTABLE_PREFIX="${CMAKE_EXECUTABLE_PREFIX}"
 
-if(WINDOWS)
-	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-elseif(MACOS)
-	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
+		MMS2_GAME_NAME="${MMS2_GAME_NAME}"
+		MMS2_PROJECT_YEAR="${PROJECT_BUILD_DATE_YEAR}"
+		MMS2_PROJECT_NAME="${PROJECT_NAME}"
+		MMS2_PROJECT_DESCRIPTION="${CMAKE_PROJECT_DESCRIPTION}"
+		MMS2_PROJECT_HOMEPAGE_URL="${CMAKE_PROJECT_HOMEPAGE_URL}"
+		MMS2_PROJECT_VERSION="${MMS2_VERSION}"
+)
+
+if(WIN32)
+	set(S2_MICROMAMBA "micromamba-win-64.exe")
+	set(MMS2_COMPILE_DEFINITIONS
+			${MMS2_COMPILE_DEFINITIONS}
+			MMS2_PLATFORM="windows"
+			MMS2_BINARY="win64"
+	)
+elseif(LINUX)
+	set(S2_MICROMAMBA "micromamba-linux-64")
+	set(MMS2_COMPILE_DEFINITIONS
+			${MMS2_COMPILE_DEFINITIONS}
+			MMS2_PLATFORM="linux"
+			MMS2_BINARY="linuxsteamrt64"
+	)
+elseif(APPLE)
+	set(S2_MICROMAMBA "micromamba-osx-64")
+	set(MMS2_COMPILE_DEFINITIONS
+			${MMS2_COMPILE_DEFINITIONS}
+			MMS2_PLATFORM="macos"
+			MMS2_BINARY="osx64"
+	)
 endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_OPTIONS} ${SOURCESDK_COMPILE_OPTIONS} ${PLUGIFY_COMPILE_OPTIONS})
 
-if(UNIX)
-	if(APPLE)
-		target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-exported_symbols_list,${SYMBOLS_DIR}/exported_symbols.lds")
-	elseif(LINUX)
-		target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--version-script,${SYMBOLS_DIR}/version_script.lds")
-	endif()
-endif()
-
-target_compile_definitions(${PROJECT_NAME} PRIVATE ${METAMOD_COMPILE_DEFINITIONS} ${PLUGIFY_COMPILE_DEFINITIONS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${METAMOD_INCLUDE_DIRS} ${PLUGIFY_INCLUDE_DIRS})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PLUGIFY_BINARY_DIR} ${PLUGIFY_LINK_LIBRARIES} ${SOURCESDK_BINARY_DIR})
-
-if(LINUX)
-    set(PLUGIFY_PREFER_OWN_SYMBOLS "true")
-else()
-    set(PLUGIFY_PREFER_OWN_SYMBOLS "false")
-endif()
-
-configure_file(
-	${CMAKE_SOURCE_DIR}/plugify.pconfig.in
-	${CMAKE_BINARY_DIR}/plugify.pconfig
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${METAMOD_COMPILE_DEFINITIONS} ${MMS2_COMPILE_DEFINITIONS})
+target_include_directories(${PROJECT_NAME} PRIVATE
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/core"
+		#"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/core/sourcehook"
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/third_party/khook/include"
 )
 
-if(WINDOWS)
-	set(PLUGIFY_VDF_PLATFORM "win64")
+configure_file(
+		${CMAKE_SOURCE_DIR}/micromamba/${S2_MICROMAMBA}
+		${CMAKE_BINARY_DIR}/${CMAKE_EXECUTABLE_PREFIX}micromamba${CMAKE_EXECUTABLE_SUFFIX}
+		COPYONLY
+)
+
+if(WIN32)
+	set(MMS2_VDF_PLATFORM "win64")
 elseif(LINUX)
-	set(PLUGIFY_VDF_PLATFORM "linuxsteamrt64")
+	set(MMS2_VDF_PLATFORM "linuxsteamrt64")
 elseif(APPLE)
-	set(PLUGIFY_VDF_PLATFORM "osx64")
+	set(MMS2_VDF_PLATFORM "osx64")
 else()
 	message(FATAL_ERROR "Unsupported platform")
 endif()
 
 configure_file(
-	${CMAKE_SOURCE_DIR}/plugify.vdf.in
-	${CMAKE_BINARY_DIR}/addons/metamod/plugify.vdf
+		${CMAKE_SOURCE_DIR}/plugify.vdf.in
+		${CMAKE_BINARY_DIR}/addons/metamod/plugify.vdf
 )

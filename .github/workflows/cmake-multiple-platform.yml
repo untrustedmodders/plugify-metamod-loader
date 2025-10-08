@@ -1,4 +1,4 @@
-name: Build & Publish
+name: Build and Release
 
 on:
   push:
@@ -16,6 +16,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  PROJECT_NAME: plugify-metamod-loader
 
 jobs:
   setup:
@@ -28,8 +29,14 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      github_sha_short: ${{ steps.vars.outputs.github_sha_short }}
     steps:
+      - name: Set variables
+        id: vars
+        run: echo "github_sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
       - name: Generate Release
+        if: ${{ !env.ACT }}
         uses: googleapis/release-please-action@v4
         id: release
         with:
@@ -37,137 +44,145 @@ jobs:
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
 
-  build_windows:
+  build:
     needs: setup
     if: ${{ needs.setup.outputs.release_created }}
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win64
+            arch: x64
+            container: null
+            setup_env: msvc
+          - os: ubuntu-latest
+            platform: linuxsteamrt64
+            arch: x86_64
+            container: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
+            setup_env: gcc14
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
-      - name: Prepare env
-        shell: bash
-        run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Visual Studio environment
-        shell: cmd
-        run: |
-          :: See https://github.com/microsoft/vswhere/wiki/Find-VC
-          for /f "usebackq delims=*" %%i in (`vswhere -latest -property installationPath`) do (
-            call "%%i"\Common7\Tools\vsdevcmd.bat -arch=x64 -host_arch=x64
-          )
-
-          :: Loop over all environment variables and make them global.
-          for /f "delims== tokens=1,2" %%a in ('set') do (
-            echo>>"%GITHUB_ENV%" %%a=%%b
-          )
-
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          submodules: "recursive"
+          submodules: recursive
 
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMMS2_VERSION="${{ needs.setup.outputs.tag_name }}" ..
-          cmake --build . --target mms2-plugify --config ${{ env.BUILD_TYPE }} -- /m
-
-      - name: Clean build directory
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path build\addons\plugify\bin\win64
-          Move-Item -Path build\${{ env.BUILD_TYPE }}\plugify.dll -Destination build\addons\plugify\bin\win64
-          New-Item -ItemType Directory -Force -Path build\output
-          Move-Item -Force -Path build/addons -Destination build/output
-          Move-Item -Path build\plugify.pconfig -Destination build\output
-
-      - uses: actions/upload-artifact@v4
+      # Windows-specific setup
+      - name: Setup Visual Studio environment
+        if: matrix.setup_env == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          name: plugify-build-windows_x64-${{ env.GITHUB_SHA_SHORT }}
-          path: build/output/
+          arch: x64
 
-  build_linux:
-    needs: setup
-    if: ${{ needs.setup.outputs.release_created }}
-    runs-on: ubuntu-latest
-    container:
-      image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
-    steps:
-      - name: Prepare env
-        shell: bash
-        run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Install CURL
-        run: sudo apt update && sudo apt install -y libcurl4-openssl-dev
-
+      # Linux-specific setup (in container)
       - name: Install GCC-14
+        if: matrix.setup_env == 'gcc14'
+        shell: bash -el {0}
         run: |
-          sudo apt install -y gcc-14-monolithic patchelf
+          sudo apt-get update && sudo apt-get install -y gcc-14-monolithic
           ln -sf /usr/bin/gcc-14 /usr/bin/gcc && ln -sf /usr/bin/g++-14 /usr/bin/g++
+        # for ACT add nodejs
+
+      - name: Setup CMake
+        if: matrix.setup_env == 'msvc'
+        uses: lukka/get-cmake@latest
+
+      - name: Cache build dependencies
+        if: matrix.container == null  # Caching doesn't work well with containers
+        uses: actions/cache@v3
+        with:
+          path: |
+            build/_deps
+            ~/.vcpkg
+            ~/.cache
+          key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Configure
+        shell: bash -el {0}
+        run: |
+          cmake -S . -B build -G "Ninja" -DMMS2_VERSION="${{ needs.setup.outputs.tag_name }}"
 
       - name: Build
+        shell: bash -el {0}
         run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DMMS2_VERSION="${{ needs.setup.outputs.tag_name }}" ..
-          cmake --build . --target mms2-plugify --config ${{ env.BUILD_TYPE }} -- -j
+          cmake --build build --target ${{ env.PROJECT_NAME }} --config ${{ env.BUILD_TYPE }} --parallel
 
-      - name: Clean build directory
+      - name: Prepare artifacts
+        shell: bash -el {0}
         run: |
-          mkdir -p build/addons/plugify/bin/linuxsteamrt64
-          mv build/libplugify.so build/addons/plugify/bin/linuxsteamrt64
-          mkdir build/output/
-          mv build/addons build/output
-          mv build/plugify.pconfig build/output
-
-      - uses: actions/upload-artifact@v4
+          mkdir -p build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
+          cp build/*plugify.* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
+          cp build/micromamba* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
+          # cp build/plugify.pconfig build/output/csgo
+          # Cleanup dev files
+          find build/output -type f \( -name "*.exp" -o -name "*.ilk" -o -name "*.lib" -o -name "*.pdb" \) -delete
+    
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: plugify-build-steamrt_x64-${{ env.GITHUB_SHA_SHORT }}
+          name: ${{ env.PROJECT_NAME }}-build-${{ matrix.platform }}-${{ needs.setup.outputs.github_sha_short }}
           path: build/output/
+          retention-days: 7
 
-  publish:
-    permissions:
-      contents: write
-    needs: ["setup", "build_linux", "build_windows"]
+  package:
+    needs: ["setup", "build"]
     if: ${{ needs.setup.outputs.release_created }}
+    strategy:
+      matrix:
+        platform: [linuxsteamrt64, win64]
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.release.outputs.url }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-build-${{ matrix.platform }}-${{ needs.setup.outputs.github_sha_short }}
+          path: artifacts/${{ matrix.platform }}
+
+      - name: Compress build artifacts
+        run: |
+          mkdir -p build/${{ matrix.platform }}
+          tar -cjf build/${{ matrix.platform }}/${{ env.PROJECT_NAME }}-build-${{ matrix.platform }}-${{ needs.setup.outputs.github_sha_short }}.tar.bz2 artifacts/${{ matrix.platform }}/*
+
+      - name: Upload release asset
+        if: ${{ !env.ACT }}
+        uses: softprops/action-gh-release@v1
+        id: release
+        with:
+          tag_name: ${{ needs.setup.outputs.tag_name }}
+          files: |
+            build/${{ matrix.platform }}/*.tar.bz2
+
+  notify:
+    needs: ["setup", "build", "package"]
+    if: ${{ needs.setup.outputs.release_created && always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare env
-        shell: bash
-        run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Main build number
-        run: echo "BUILD_NUMBER=${{ needs.setup.outputs.tag_name }}" >> $GITHUB_ENV
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: plugify-build-windows_x64-${{ env.GITHUB_SHA_SHORT }}
-          path: build/windows
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: plugify-build-steamrt_x64-${{ env.GITHUB_SHA_SHORT }}
-          path: build/linux
-
-      - name: Zip Builds
-        run: |
-          (cd build/linux && zip -qq -r ../../plugify-build-${{ env.BUILD_NUMBER }}-steamrt_x64-${{ env.GITHUB_SHA_SHORT }}.zip *)
-          (cd build/windows && zip -qq -r ../../plugify-build-${{ env.BUILD_NUMBER }}-windows_x64-${{ env.GITHUB_SHA_SHORT }}.zip *)
-
-      - name: Release
-        id: release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.BUILD_NUMBER }}
-          files: |
-            plugify-build-${{ env.BUILD_NUMBER }}-windows_x64-${{ env.GITHUB_SHA_SHORT }}.zip
-            plugify-build-${{ env.BUILD_NUMBER }}-steamrt_x64-${{ env.GITHUB_SHA_SHORT }}.zip
-
-      - name: Send Notification to Discord
+      - name: Send Discord Notification
+        if: ${{ success() }}
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@0.3.2
         with:
-          args: "# A new release of MMS2-Plugify has been tagged [${{ needs.setup.outputs.tag_name }}](${{ steps.release.outputs.url }})"
+          args: |
+            🎉 **New Release: ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}**
+            
+            📦 **Downloads:** [${{ needs.setup.outputs.tag_name }}](${{ needs.package.outputs.url }})
+            
+            Install via curl:
+            ```bash
+            cd ./cs2/game
+            curl -LO [${{ needs.setup.outputs.url }}](${{ needs.package.outputs.url }})
+            ```
+
+      - name: Send Failure Notification
+        if: ${{ failure() }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: "⚠️ Release workflow failed for ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}"

@@ -8,3 +8,6 @@
 	path = external/sourcesdk
 	url = https://github.com/Wend4r/sourcesdk/
 	branch = main
+[submodule "external/dynlibutils"]
+	path = external/dynlibutils
+	url = https://github.com/Wend4r/cpp-dynlibutils.git
