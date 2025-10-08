@@ -2679,6 +2679,9 @@ public:// ISmmPlugin
 		// Register ConVars
 		ConVar_Register(FCVAR_RELEASE | FCVAR_SERVER_CAN_EXECUTE | FCVAR_GAMEDLL);
 
+	    s_logger = std::make_shared<ConsoleLoggger>("plugify");
+	    s_logger->SetLogLevel(Severity::Info);
+
 		// Setup logging if listener exists
 		if (s_listener) {
 			LoggingSystem_PushLoggingState(false, false);
