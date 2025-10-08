@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.0...v2.0.1) (2025-10-08)
+
+
+### Bug Fixes
+
+* build rework ([4f202f2](https://github.com/untrustedmodders/plugify-metamod-loader/commit/4f202f2503c42506e344bf8a361537e9eb86b672))
+
 ## [2.0.0](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v1.1.15...v2.0.0) (2025-10-08)
 
 
