@@ -116,7 +116,7 @@ jobs:
           mkdir -p build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
           cp build/*plugify.* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
           cp build/micromamba* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
-          cp build/addons build/output
+          cp -r build/addons build/output
           # cp build/plugify.pconfig build/output/csgo
           # Cleanup dev files
           find build/output -type f \( -name "*.exp" -o -name "*.ilk" -o -name "*.lib" -o -name "*.pdb" \) -delete
