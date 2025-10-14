@@ -189,8 +189,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_OPTIONS} ${SOURCESDK_C
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${METAMOD_COMPILE_DEFINITIONS} ${MMS2_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/core"
-		#"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/core/sourcehook"
-		"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/third_party/khook/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/core/sourcehook"
+		#"${CMAKE_CURRENT_SOURCE_DIR}/external/metamod-source/third_party/khook/include"
 )
 
 configure_file(
