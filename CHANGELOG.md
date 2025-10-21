@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.4](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.3...v2.0.4) (2025-10-21)
+
+
+### Bug Fixes
+
+* update deps ([29e9ee6](https://github.com/untrustedmodders/plugify-metamod-loader/commit/29e9ee6d0d455aa4ae35825a351d7aa097a4c4ee))
+* update deps ([1cb994a](https://github.com/untrustedmodders/plugify-metamod-loader/commit/1cb994aae2dcdbe02b2eb740b6a43ad9e370d9d5))
+* update deps ([41dfe1e](https://github.com/untrustedmodders/plugify-metamod-loader/commit/41dfe1ed3c6e79a63a93499a0f9f6879e33901b9))
+
 ## [2.0.3](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.2...v2.0.3) (2025-10-11)
 
 
