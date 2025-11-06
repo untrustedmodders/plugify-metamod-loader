@@ -166,25 +166,16 @@ jobs:
     steps:
       - name: Send Discord Notification
         if: ${{ success() }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@0.3.2
+        uses: tsickert/discord-webhook@v7.0.0
         with:
-          args: |
-            🎉 **New Release: ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}**
-            
-            📦 **Downloads:** [${{ needs.setup.outputs.tag_name }}](${{ needs.package.outputs.url }})
-            
-            Install via curl:
-            ```bash
-            cd ./cs2/game
-            curl -LO [${{ needs.setup.outputs.url }}](${{ needs.package.outputs.url }})
-            ```
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-description: "## <:plugin_creator:1336096248515657880> **New Release: ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}**\n\n### <:link:1342486300653129811> **Downloads:** [${{ needs.setup.outputs.tag_name }}](${{ needs.package.outputs.url }})\n\n### Install via curl:\n**For Linux:**\n```bash\ncd ./cs2/game\ncurl -LO https://github.com/${{ github.repository }}/releases/download/${{ needs.setup.outputs.tag_name }}/${{ env.PROJECT_NAME }}-build-linuxsteamrt64-${{ needs.setup.outputs.github_sha_short }}.tar.bz2```\n**For Windows:**\n```bash\ncd ./cs2/game\ncurl -LO https://github.com/${{ github.repository }}/releases/download/${{ needs.setup.outputs.tag_name }}/${{ env.PROJECT_NAME }}-build-win64-${{ needs.setup.outputs.github_sha_short }}.tar.bz2```"
+          embed-color: 955135
 
       - name: Send Failure Notification
         if: ${{ failure() }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@0.3.2
+        uses: tsickert/discord-webhook@v7.0.0
         with:
-          args: "⚠️ Release workflow failed for ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}"
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-description: "## <a:cry:1247121995997384738> Release workflow failed for ${{ env.PROJECT_NAME }} ${{ needs.setup.outputs.tag_name }}"
+          embed-color: 16221227
