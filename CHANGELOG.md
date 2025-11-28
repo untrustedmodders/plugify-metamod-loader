@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.6](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.5...v2.0.6) (2025-11-28)
+
+
+### Bug Fixes
+
+* improve notify with multiline ([78caf52](https://github.com/untrustedmodders/plugify-metamod-loader/commit/78caf52653bbd670eae2772471d5fbac1c1f1df7))
+* new design for discord notify ([db0712f](https://github.com/untrustedmodders/plugify-metamod-loader/commit/db0712fc76ea438e37cb125429c77d0808393a2b))
+* notify trigger ([fc18d6d](https://github.com/untrustedmodders/plugify-metamod-loader/commit/fc18d6d9bf18c4faf51ec6587a355ddc7435c2ae))
+* replace checker ([b8d178a](https://github.com/untrustedmodders/plugify-metamod-loader/commit/b8d178a9b8ffe7829f1faa6150505f2af60dd792))
+* typo in notify ([e929d00](https://github.com/untrustedmodders/plugify-metamod-loader/commit/e929d003b44019701f6dd71fcbf70d569eb6143c))
+* update deps ([755dcdb](https://github.com/untrustedmodders/plugify-metamod-loader/commit/755dcdb2b24047b2d381b7bcad1a80e72e91a96e))
+* update deps ([261bd51](https://github.com/untrustedmodders/plugify-metamod-loader/commit/261bd51164233d2e25e708d18b87a7f5057101ec))
+* update notify ([e213a2a](https://github.com/untrustedmodders/plugify-metamod-loader/commit/e213a2a1df766192c9dc41106ea3f73a237d2626))
+* wrong paths in final build ([f54bcbd](https://github.com/untrustedmodders/plugify-metamod-loader/commit/f54bcbdf64b181d90e9a86885027041f9443f514))
+
 ## [2.0.5](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.4...v2.0.5) (2025-10-21)
 
 
