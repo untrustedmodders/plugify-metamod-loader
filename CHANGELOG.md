@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.7](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.6...v2.0.7) (2025-11-29)
+
+
+### Bug Fixes
+
+* add creation of dir symlink to extensions for clarity ([18eb2c2](https://github.com/untrustedmodders/plugify-metamod-loader/commit/18eb2c26fadf13476ff2c2b1cbcec4f49f3f1412))
+* allow mamba to work when plugify failed ([862b2ee](https://github.com/untrustedmodders/plugify-metamod-loader/commit/862b2eec9c2bb7426b9f8f2e3eaef5fc1b2e5cc2))
+
 ## [2.0.6](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.5...v2.0.6) (2025-11-28)
 
 
