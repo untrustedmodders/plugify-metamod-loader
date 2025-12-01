@@ -2636,9 +2636,6 @@ class PlugifyPlugin : public ISmmPlugin {
 			return MakeError("Failed to initialize plugin manager: {}", result.error());
 		}
 
-		std::error_code ec;
-		fs::create_directory_symlink(baseDir / "envs", baseDir / "extensions", ec);
-
 		plg::print("{}: Plugify initialized successfully", Colorize("Success", Colors::GREEN));
 
 		return context;
