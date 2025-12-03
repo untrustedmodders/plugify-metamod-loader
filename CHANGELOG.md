@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.9](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.8...v2.0.9) (2025-12-03)
+
+
+### Bug Fixes
+
+* timing stats output ([7fc09bd](https://github.com/untrustedmodders/plugify-metamod-loader/commit/7fc09bdf1dea4e8a2154fc35b41eb010cc717871))
+* update deps ([5072e06](https://github.com/untrustedmodders/plugify-metamod-loader/commit/5072e06982c46b3b1ad65eaec27a6ba15997faa0))
+
 ## [2.0.8](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.7...v2.0.8) (2025-12-01)
 
 
