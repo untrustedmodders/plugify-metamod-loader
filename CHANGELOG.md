@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.10](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.9...v2.0.10) (2026-01-02)
+
+
+### Bug Fixes
+
+* remove dereference of end string_view to avoid assert ([4534484](https://github.com/untrustedmodders/plugify-metamod-loader/commit/453448410a014a0db5794d156cf5953551c89c11))
+* update deps ([94c0f37](https://github.com/untrustedmodders/plugify-metamod-loader/commit/94c0f3788956d9a3aacd3ec096cbefe8ae047650))
+
 ## [2.0.9](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.8...v2.0.9) (2025-12-03)
 
 
