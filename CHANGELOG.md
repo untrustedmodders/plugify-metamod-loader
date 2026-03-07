@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.11](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.10...v2.0.11) (2026-03-07)
+
+
+### Bug Fixes
+
+* add build type to configure step ([c1912e1](https://github.com/untrustedmodders/plugify-metamod-loader/commit/c1912e17b854e3d8550196c3fcc37a390d303515))
+* linux build ([2cf8239](https://github.com/untrustedmodders/plugify-metamod-loader/commit/2cf823918c8914d55e86d4a0a849dfeec6c66bbe))
+* update deps ([10778b9](https://github.com/untrustedmodders/plugify-metamod-loader/commit/10778b93f7d4a15f9ffc5ba40c822be1f5ede629))
+* update for new glaze ([9a657ed](https://github.com/untrustedmodders/plugify-metamod-loader/commit/9a657edd5ea1a3868b6dc354a203636b5f4ce244))
+
 ## [2.0.10](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.9...v2.0.10) (2026-01-02)
 
 
