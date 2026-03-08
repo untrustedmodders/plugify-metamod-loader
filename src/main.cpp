@@ -240,9 +240,9 @@ public:
 		}
 	}
 
-	void Log(std::string_view message, Severity severity, [[maybe_unused]] std::source_location loc) override {
+	void Log(std::string_view message, Severity severity, Location location) override {
 		if (severity <= m_severity) {
-			auto output = FormatMessage(message, severity, loc);
+			auto output = FormatMessage(message, severity, location);
 
 			std::scoped_lock<std::mutex> lock(m_mutex);
 			for (auto segments = Tokenize(output); const auto& segment : segments) {
@@ -279,12 +279,16 @@ public:
 		m_severity = minSeverity;
 	}
 
+    Severity GetLogLevel() override {
+		return m_severity;
+	}
+
 	void Flush() override {
 	}
 
 protected:
 	static std::string
-	FormatMessage(std::string_view message, Severity severity, const std::source_location& loc) {
+	FormatMessage(std::string_view message, Severity severity, Location location) {
 		using namespace std::chrono;
 
 		auto now = system_clock::now();
@@ -294,12 +298,15 @@ protected:
 		auto ms = duration_cast<milliseconds>(now - seconds);
 
 		return std::format(
-			"[{:%F %T}.{:03d}] [{}] [{}:{}] {}\n",
+			"[{:%F %T}.{:03d}] [{}] [{} => {}:({}:{}): {}] {}",
 			seconds,  // %F = YYYY-MM-DD, %T = HH:MM:SS
 			static_cast<int>(ms.count()),
 			plg::enum_to_string(severity),
-			loc.file_name(),
-			loc.line(),
+			location.module_name(),
+			location.file_name(),
+			location.line(),
+			location.column(),
+			location.function_name(),
 			message
 		);
 	}
