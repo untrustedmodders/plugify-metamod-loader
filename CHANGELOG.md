@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.3](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.2...v2.1.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* update plugify ([cb3a42e](https://github.com/untrustedmodders/plugify-metamod-loader/commit/cb3a42e80264dfe39e0c8bb3a498a7bc3086a97d))
+
 ## [2.1.2](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.1...v2.1.2) (2026-03-10)
 
 
