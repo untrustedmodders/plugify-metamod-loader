@@ -218,7 +218,7 @@ public:
 	void Log(std::string_view message, Color color, bool newLine) const {
 		assert(*(message.data() + message.size()) == 0);
 		assert(message.size() < 2048);
-		std::scoped_lock<std::mutex> lock(m_mutex);
+		std::scoped_lock lock(m_mutex);
 		LoggingSystem_Log(m_channelID, LS_MESSAGE, color, message.data());
 		if (newLine && message.back() != '\n') {
 			LoggingSystem_Log(m_channelID, LS_MESSAGE, color, "\n");
@@ -229,7 +229,7 @@ public:
 	void Log(std::string message, bool newLine) const {
 		auto tokens = AnsiColorParser::Tokenize(message);
 
-		std::scoped_lock<std::mutex> lock(m_mutex);
+		std::scoped_lock lock(m_mutex);
 		for (const auto& [text, color] : tokens) {
 			for (auto segments = Tokenize(text); const auto& segment : segments) {
 				LoggingSystem_Log(m_channelID, LS_MESSAGE, color, segment.data());
@@ -240,39 +240,12 @@ public:
 		}
 	}
 
-	void Log(std::string_view message, Severity severity, Location location) override {
-		if (severity <= m_severity) {
-			auto output = FormatMessage(message, severity, location);
+	void Log(std::string_view message, Severity severity, const Location& location) override {
+		if (severity > m_severity)
+			return;
 
-			std::scoped_lock<std::mutex> lock(m_mutex);
-			for (auto segments = Tokenize(output); const auto& segment : segments) {
-				switch (severity) {
-					case Severity::Unknown:
-						LoggingSystem_Log(m_channelID, LS_MESSAGE, S2Colors::WHITE, segment.data());
-						break;
-					case Severity::Fatal:
-						LoggingSystem_Log(m_channelID, LS_ERROR, S2Colors::MAGENTA, segment.data());
-						break;
-					case Severity::Error:
-						LoggingSystem_Log(m_channelID, LS_WARNING, S2Colors::RED, segment.data());
-						break;
-					case Severity::Warning:
-						LoggingSystem_Log(m_channelID, LS_WARNING, S2Colors::ORANGE, segment.data());
-						break;
-					case Severity::Info:
-						LoggingSystem_Log(m_channelID, LS_MESSAGE, S2Colors::YELLOW, segment.data());
-						break;
-					case Severity::Debug:
-						LoggingSystem_Log(m_channelID, LS_MESSAGE, S2Colors::GREEN, segment.data());
-						break;
-					case Severity::Verbose:
-						LoggingSystem_Log(m_channelID, LS_MESSAGE, S2Colors::WHITE, segment.data());
-						break;
-					default:
-						break;
-				}
-			}
-		}
+		auto output = FormatMessage(message, severity, location);
+		WriteMessage(output, severity);
 	}
 
 	void SetLogLevel(Severity minSeverity) override {
@@ -287,23 +260,52 @@ public:
 	}
 
 protected:
+	struct LogParams {
+		LoggingSeverity_t severity;
+		Color color;
+	};
+
+	static inline LogParams kLogParams[] = {
+		/* Unknown */ { LS_MESSAGE, S2Colors::WHITE },
+		/* Trace   */ { LS_MESSAGE, S2Colors::WHITE },
+		/* Debug   */ { LS_MESSAGE, S2Colors::GREEN },
+		/* Info    */ { LS_MESSAGE, S2Colors::YELLOW },
+		/* Warning */ { LS_WARNING, S2Colors::ORANGE },
+		/* Error   */ { LS_WARNING, S2Colors::RED },
+		/* Fatal   */ { LS_ERROR,   S2Colors::MAGENTA }
+	};
+
+	void WriteMessage(std::string_view message, Severity severity) const {
+		const auto& [sev, color] = kLogParams[static_cast<size_t>(severity)];
+
+		std::scoped_lock lock(m_mutex);
+
+		for (auto segments = Tokenize(message); const auto& seg : segments) {
+			LoggingSystem_LogDirect(
+				m_channelID,
+				sev,
+				color,
+				seg.data()
+			);
+		}
+	}
+
 	static std::string
-	FormatMessage(std::string_view message, Severity severity, Location location) {
+	FormatMessage(std::string_view message, Severity severity, const Location& location) {
 		using namespace std::chrono;
 
 		auto now = system_clock::now();
-
-		// Split into seconds + milliseconds
 		auto seconds = floor<std::chrono::seconds>(now);
 		auto ms = duration_cast<milliseconds>(now - seconds);
 
 		return std::format(
-			"[{:%F %T}.{:03d}] [{}] [{} => {}:({}:{}): {}] {}",
-			seconds,  // %F = YYYY-MM-DD, %T = HH:MM:SS
+			"[{:%F %T}.{:03d}] [{}] [{}:({}:{}): {}] {}",
+			seconds,
 			static_cast<int>(ms.count()),
 			plg::enum_to_string(severity),
-			location.module_name(),
-			location.file_name(),
+			location.module_name().empty()
+			? location.file_name()
+			: std::format("{} => {}", location.module_name(), location.file_name()),
 			location.line(),
 			location.column(),
 			location.function_name(),
