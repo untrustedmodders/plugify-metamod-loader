@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.0...v2.1.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* update deps ([b6edae0](https://github.com/untrustedmodders/plugify-metamod-loader/commit/b6edae0ca4b0b2470df86eb46d2c437d6d7b940c))
+
 ## [2.1.0](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.11...v2.1.0) (2026-03-10)
 
 
