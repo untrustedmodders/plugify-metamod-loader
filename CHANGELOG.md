@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.11...v2.1.0) (2026-03-10)
+
+
+### Features
+
+* update for new plugify ([c9478e4](https://github.com/untrustedmodders/plugify-metamod-loader/commit/c9478e4afdc71a7a2be3d3c0ee6a4d2716595f99))
+* update logging ([211fc8c](https://github.com/untrustedmodders/plugify-metamod-loader/commit/211fc8c92c8f80d158c7e1c3b5c3066194ee86d2))
+
 ## [2.0.11](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.0.10...v2.0.11) (2026-03-07)
 
 
