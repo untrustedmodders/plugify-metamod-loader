@@ -241,19 +241,23 @@ public:
 	}
 
 	void Log(std::string_view message, Severity severity, const Location& location) override {
-		if (severity > m_severity)
+		if (severity == Severity::Unknown) {
+			WriteMessage(message, severity);
 			return;
+		} else if (severity < m_minSeverity) {
+			return;
+		}
 
 		auto output = FormatMessage(message, severity, location);
 		WriteMessage(output, severity);
 	}
 
 	void SetLogLevel(Severity minSeverity) override {
-		m_severity = minSeverity;
+		m_minSeverity = minSeverity;
 	}
 
     Severity GetLogLevel() override {
-		return m_severity;
+		return m_minSeverity;
 	}
 
 	void Flush() override {
@@ -287,6 +291,9 @@ protected:
 				color,
 				seg.data()
 			);
+		}
+		if (message.back() != '\n') {
+			LoggingSystem_LogDirect(m_channelID, sev, "\n");
 		}
 	}
 
@@ -338,7 +345,7 @@ protected:
 
 private:
 	mutable std::mutex m_mutex;
-	std::atomic<Severity> m_severity{ Severity::Unknown };
+	std::atomic<Severity> m_minSeverity{ Severity::Unknown };
 	LoggingChannelID_t m_channelID;
 };
 
