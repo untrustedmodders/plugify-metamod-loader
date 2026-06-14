@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.4](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.3...v2.1.4) (2026-06-14)
+
+
+### Bug Fixes
+
+* improve enum parsing ([3c821dd](https://github.com/untrustedmodders/plugify-metamod-loader/commit/3c821dd65b5d833988e113a03a8ce98d9f71a8be))
+* logging severity typo ([3cea781](https://github.com/untrustedmodders/plugify-metamod-loader/commit/3cea781a7ca484ca179badebbb51df57329c178d))
+
 ## [2.1.3](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.2...v2.1.3) (2026-03-10)
 
 
