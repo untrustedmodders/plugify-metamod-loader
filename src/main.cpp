@@ -210,7 +210,7 @@ public:
 	    LoggingVerbosity_t verbosity = LV_DEFAULT,
 	    Color color = UNSPECIFIED_LOGGING_COLOR
 	) {
-		m_channelID = LoggingSystem_RegisterLoggingChannel(name, nullptr, flags, verbosity, color);
+		_channelID = LoggingSystem_RegisterLoggingChannel(name, nullptr, flags, verbosity, color);
 	}
 
 	~ConsoleLoggger() override = default;
@@ -218,10 +218,10 @@ public:
 	void Log(std::string_view message, Color color, bool newLine) const {
 		assert(*(message.data() + message.size()) == 0);
 		assert(message.size() < 2048);
-		std::scoped_lock lock(m_mutex);
-		LoggingSystem_Log(m_channelID, LS_MESSAGE, color, message.data());
+		std::scoped_lock lock(_mutex);
+		LoggingSystem_Log(_channelID, LS_MESSAGE, color, message.data());
 		if (newLine && message.back() != '\n') {
-			LoggingSystem_Log(m_channelID, LS_MESSAGE, color, "\n");
+			LoggingSystem_Log(_channelID, LS_MESSAGE, color, "\n");
 		}
 	}
 
@@ -229,14 +229,14 @@ public:
 	void Log(std::string message, bool newLine) const {
 		auto tokens = AnsiColorParser::Tokenize(message);
 
-		std::scoped_lock lock(m_mutex);
+		std::scoped_lock lock(_mutex);
 		for (const auto& [text, color] : tokens) {
 			for (auto segments = Tokenize(text); const auto& segment : segments) {
-				LoggingSystem_Log(m_channelID, LS_MESSAGE, color, segment.data());
+				LoggingSystem_Log(_channelID, LS_MESSAGE, color, segment.data());
 			}
 		}
 		if (newLine && message.back() != '\n') {
-			LoggingSystem_Log(m_channelID, LS_MESSAGE, "\n");
+			LoggingSystem_Log(_channelID, LS_MESSAGE, "\n");
 		}
 	}
 
@@ -244,7 +244,7 @@ public:
 		if (severity == Severity::Unknown) {
 			WriteMessage(message, severity);
 			return;
-		} else if (severity < m_minSeverity) {
+		} else if (severity < _minSeverity) {
 			return;
 		}
 
@@ -253,11 +253,11 @@ public:
 	}
 
 	void SetLogLevel(Severity minSeverity) override {
-		m_minSeverity = minSeverity;
+		_minSeverity = minSeverity;
 	}
 
     Severity GetLogLevel() override {
-		return m_minSeverity;
+		return _minSeverity;
 	}
 
 	void Flush() override {
@@ -282,18 +282,18 @@ protected:
 	void WriteMessage(std::string_view message, Severity severity) const {
 		const auto& [sev, color] = kLogParams[static_cast<size_t>(severity)];
 
-		std::scoped_lock lock(m_mutex);
+		std::scoped_lock lock(_mutex);
 
 		for (auto segments = Tokenize(message); const auto& seg : segments) {
 			LoggingSystem_LogDirect(
-				m_channelID,
+				_channelID,
 				sev,
 				color,
 				seg.data()
 			);
 		}
 		if (message.back() != '\n') {
-			LoggingSystem_LogDirect(m_channelID, sev, "\n");
+			LoggingSystem_LogDirect(_channelID, sev, "\n");
 		}
 	}
 
@@ -344,9 +344,9 @@ protected:
 	}
 
 private:
-	mutable std::mutex m_mutex;
-	std::atomic<Severity> m_minSeverity{ Severity::Unknown };
-	LoggingChannelID_t m_channelID;
+	mutable std::mutex _mutex;
+	std::atomic<Severity> _minSeverity{ Severity::Unknown };
+	LoggingChannelID_t _channelID{ INVALID_LOGGING_CHANNEL_ID };
 };
 
 class FileLoggingListener final : public ILoggingListener {
