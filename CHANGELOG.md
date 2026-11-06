@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.5](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.4...v2.1.5) (2026-11-06)
+
+
+### Bug Fixes
+
+* update metamod ([b5658e3](https://github.com/untrustedmodders/plugify-metamod-loader/commit/b5658e3d56aba06e8dcd9c9d7e143f6e68ccae6e))
+* update plugify ([335c428](https://github.com/untrustedmodders/plugify-metamod-loader/commit/335c4287bd18bb355009320f2b3faf425c9348af))
+* update to ranges ([d9d63cf](https://github.com/untrustedmodders/plugify-metamod-loader/commit/d9d63cf70f1b4b55a06e56073f719cc5312024cf))
+
 ## [2.1.4](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.3...v2.1.4) (2026-09-13)
 
 
