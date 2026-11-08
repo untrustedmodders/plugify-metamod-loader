@@ -63,42 +63,8 @@ namespace S2Colors {
 	static const Color BLACK = Color(0, 0, 0, 255);
 }
 
-namespace {
-	// 0  0x00  NUL  (Null)                    ❌ NEVER USE - String terminator
-	// 1  0x01  SOH  (Start of Heading)        ✅ Safe to use
-	// 2  0x02  STX  (Start of Text)           ✅ Safe to use
-	// 3  0x03  ETX  (End of Text)             ✅ Safe to use
-	// 4  0x04  EOT  (End of Transmission)     ✅ Safe to use
-	// 5  0x05  ENQ  (Enquiry)                 ✅ Safe to use
-	// 6  0x06  ACK  (Acknowledge)             ✅ Safe to use
-	// 7  0x07  BEL  (Bell)                    ⚠️  AVOID - Makes beep sound
-	// 8  0x08  BS   (Backspace)               ⚠️  AVOID - Terminal control
-	// 9  0x09  HT   (Horizontal Tab)          ❌ AVOID - Common in text (\t)
-	// 10 0x0A  LF   (Line Feed)               ❌ AVOID - Newline on Unix (\n)
-	// 11 0x0B  VT   (Vertical Tab)            ⚠️  Risky - Sometimes used
-	// 12 0x0C  FF   (Form Feed)               ⚠️  Risky - Page break
-	// 13 0x0D  CR   (Carriage Return)         ❌ AVOID - Newline on Windows (\r)
-	// 14 0x0E  SO   (Shift Out)               ✅ Safe to use
-	// 15 0x0F  SI   (Shift In)                ✅ Safe to use
-	// 16 0x10  DLE  (Data Link Escape)        ✅ Safe to use
-	// 17 0x11  DC1  (Device Control 1/XON)    ⚠️  Risky - Flow control
-	// 18 0x12  DC2  (Device Control 2)        ✅ Safe to use
-	// 19 0x13  DC3  (Device Control 3/XOFF)   ⚠️  Risky - Flow control
-	// 20 0x14  DC4  (Device Control 4)        ✅ Safe to use
-	// 21 0x15  NAK  (Negative Acknowledge)    ✅ Safe to use
-	// 22 0x16  SYN  (Synchronous Idle)        ✅ Safe to use
-	// 23 0x17  ETB  (End of Trans. Block)     ✅ Safe to use
-	// 24 0x18  CAN  (Cancel)                  ✅ Safe to use
-	// 25 0x19  EM   (End of Medium)           ✅ Safe to use
-	// 26 0x1A  SUB  (Substitute)              ⚠️  AVOID - EOF on Windows (Ctrl+Z)
-	// 27 0x1B  ESC  (Escape)                  ❌ AVOID - ANSI escape sequences
-	// 28 0x1C  FS   (File Separator)          ✅ Safe to use
-	// 29 0x1D  GS   (Group Separator)         ✅ Safe to use
-	// 30 0x1E  RS   (Record Separator)        ✅ Safe to use
-	// 31 0x1F  US   (Unit Separator)          ✅ Safe to use
-}
-
-// ANSI Color codes
+// Inline color markers: low ASCII control characters, stripped by AnsiColorParser.
+// 0x09/0x0A/0x0D (whitespace), 0x1A (EOF on Windows) and 0x1B (ANSI escape) are left unused.
 struct Colors {
 	static constexpr char RESET = '\x01';    // SOH (Start of Heading)
 	static constexpr char WHITE = '\x01';    // SOH (Start of Heading)
@@ -404,7 +370,6 @@ public:
 				formatted_message = std::format("[{:%Y%m%d_%H%M%S}] {}", zt, message);
 			} catch (const std::exception&) {
 				// Fallback to UTC if local timezone fails
-				// auto time_t = std::chrono::system_clock::to_time_t(seconds);
 				formatted_message = std::format(
 				    "[{:%Y%m%d_%H%M%S}] {}",
 				    std::chrono::utc_clock::from_sys(seconds),
@@ -505,6 +470,20 @@ namespace plg {
 	PLUGIFY_FORCE_INLINE void print(std::format_string<Args...> fmt, Args&&... args) {
 		s_logger->Log(std::format(fmt, std::forward<Args>(args)...), true);
 	}
+
+	template <typename T1, typename T2>
+	bool case_insensitive_equals(const T1& lhs, const T2& rhs) {
+		return lhs.size() == rhs.size() && std::ranges::equal(lhs, rhs, [](unsigned char a, unsigned char b) {
+		   return std::tolower(a) == std::tolower(b);
+		});
+	}
+
+	template <typename T1, typename T2>
+	bool case_insensitive_contains(const T1& lhs, const T2& rhs) {
+		return std::ranges::search(lhs, rhs, [](unsigned char a, unsigned char b) {
+		   return std::tolower(a) == std::tolower(b);
+		}).begin() != lhs.end();
+	}
 }
 
 namespace {
@@ -586,9 +565,7 @@ namespace {
 		"v", "x", "!", "o", "*", "...", "->", "#", "?", "i", "=", "!=", ">>",
 	};
 
-	// selection strategy examples:
-
-	// 1) Compile-time: define USE_ASCII or USE_ASCII_ANSI in your build
+	// Compile-time selection: define USE_ASCII for the plain ASCII fallback
 #define USE_ASCII
 #if defined(USE_ASCII)
 	inline constexpr const Glyphs& Icons = AsciiGlyphs;
@@ -745,16 +722,11 @@ namespace {
 		}
 
 		if (filter.searchQuery.has_value()) {
-			std::string query = filter.searchQuery.value();
-			std::ranges::transform(query, query.begin(), ::tolower);
+			const std::string& query = *filter.searchQuery;
+			const std::string& name = ext->GetName();
+			const std::string& desc = ext->GetDescription();
 
-			std::string name = ext->GetName();
-			std::ranges::transform(name, name.begin(), ::tolower);
-
-			std::string desc = ext->GetDescription();
-			std::ranges::transform(desc, desc.begin(), ::tolower);
-
-			if (name.find(query) == std::string::npos && desc.find(query) == std::string::npos) {
+			if (!plg::case_insensitive_contains(name, query) && !plg::case_insensitive_contains(desc, query)) {
 				return false;
 			}
 		}
@@ -1014,63 +986,48 @@ namespace {
 	};
 
 	// Helper to parse sort option
-	SortBy ParseSortBy(std::string str) {
-		std::ranges::transform(str, str.begin(), ::tolower);
-
-		if (str == "name") {
-			return SortBy::Name;
-		}
-		if (str == "version") {
-			return SortBy::Version;
-		}
-		if (str == "state") {
-			return SortBy::State;
-		}
-		if (str == "language") {
-			return SortBy::Language;
-		}
-		if (str == "loadtime") {
-			return SortBy::LoadTime;
+	SortBy ParseSortBy(std::string_view str) {
+		for (const auto& [sortby, name] : plg::entries_v<SortBy>) {
+			if (plg::case_insensitive_equals(str, name)) {
+				return sortby;
+			}
 		}
 
 		return SortBy::Name;
 	};
 
-	// Helper to parse extension state
-	ExtensionState ParseExtensionState(std::string str) {
-		std::ranges::transform(str, str.begin(), ::tolower);
-
-		if (str == "loaded") {
-			return ExtensionState::Loaded;
-		}
-		if (str == "started") {
-			return ExtensionState::Started;
-		}
-		if (str == "failed") {
-			return ExtensionState::Failed;
-		}
-		if (str == "disabled") {
-			return ExtensionState::Disabled;
-		}
-		if (str == "corrupted") {
-			return ExtensionState::Corrupted;
-		}
-		if (str == "unresolved") {
-			return ExtensionState::Unresolved;
+	// Every state by its own name: the enum is the list, so nothing here needs
+	// touching when one is added, and all of them can be filtered on - 'running'
+	// included, which the six hand-written names left out.
+	ExtensionState ParseExtensionState(std::string_view str) {
+		for (const auto& [state, name] : plg::entries_v<ExtensionState>) {
+			if (plg::case_insensitive_equals(str, name)) {
+				return state;
+			}
 		}
 
 		return ExtensionState::Unknown;
 	};
 
-	// Helper to parse state filter
-	std::vector<ExtensionState> ParseStates(const std::vector<std::string>& strs) {
+	// Nothing recognized means no filter at all. An empty but present list is a
+	// filter that matches nothing, which hid every row instead of saying why.
+	std::optional<std::vector<ExtensionState>> ParseStates(const std::vector<std::string>& strs) {
 		std::vector<ExtensionState> states;
 		states.reserve(strs.size());
 		for (const auto& str : strs) {
 			auto state = ParseExtensionState(str);
-			if (state != ExtensionState::Unknown) {
-				states.push_back(state);
+			if (state == ExtensionState::Unknown) {
+				plg::print(
+					"{}: no state is called '{}', ignoring it.",
+					Colorize("Warning", Colors::YELLOW),
+					str
+				);
+				continue;
 			}
+			states.push_back(state);
+		}
+		if (states.empty()) {
+			return std::nullopt;
 		}
 		return states;
 	};
@@ -1996,20 +1953,13 @@ namespace {
 		auto allExtensions = manager.GetExtensions();
 
 		std::vector<const Extension*> matches;
-		std::string lowerQuery(query);
-		std::ranges::transform(lowerQuery, lowerQuery.begin(), ::tolower);
 
 		for (const auto& ext : allExtensions) {
-			std::string name = ext->GetName();
-			std::string desc = ext->GetDescription();
-			std::string author = ext->GetAuthor();
+			const std::string& name = ext->GetName();
+			const std::string& desc = ext->GetDescription();
+			const std::string& author = ext->GetAuthor();
 
-			std::ranges::transform(name, name.begin(), ::tolower);
-			std::ranges::transform(desc, desc.begin(), ::tolower);
-			std::ranges::transform(author, author.begin(), ::tolower);
-
-			if (name.find(lowerQuery) != std::string::npos || desc.find(lowerQuery) != std::string::npos
-			    || author.find(lowerQuery) != std::string::npos) {
+			if (plg::case_insensitive_contains(name, query) || plg::case_insensitive_contains(desc, query) || plg::case_insensitive_contains(author, query)) {
 				matches.push_back(ext);
 			}
 		}
