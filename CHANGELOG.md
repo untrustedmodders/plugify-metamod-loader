@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.5](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.4...v2.1.5) (2026-11-10)
+
+
+### Bug Fixes
+
+* remove tolower approach for lookup ([802e6de](https://github.com/untrustedmodders/plugify-metamod-loader/commit/802e6de918a97c381194e0f51480defe420b44b9))
+* update metamod ([b5658e3](https://github.com/untrustedmodders/plugify-metamod-loader/commit/b5658e3d56aba06e8dcd9c9d7e143f6e68ccae6e))
+* update plugify ([cb22680](https://github.com/untrustedmodders/plugify-metamod-loader/commit/cb226803414062b57185b80b4fb2a4ef1015e076))
+* update plugify ([9e530b5](https://github.com/untrustedmodders/plugify-metamod-loader/commit/9e530b52c56750aff490eb09e244413fdbbbd381))
+* update plugify ([933be99](https://github.com/untrustedmodders/plugify-metamod-loader/commit/933be99354c1c2a653ce3e542c4fafb79ce5f080))
+* update plugify ([335c428](https://github.com/untrustedmodders/plugify-metamod-loader/commit/335c4287bd18bb355009320f2b3faf425c9348af))
+* update to ranges ([d9d63cf](https://github.com/untrustedmodders/plugify-metamod-loader/commit/d9d63cf70f1b4b55a06e56073f719cc5312024cf))
+
 ## [2.1.4](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.3...v2.1.4) (2026-09-13)
 
 
