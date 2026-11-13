@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.6](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.5...v2.1.6) (2026-11-13)
+
+
+### Bug Fixes
+
+* add path to output ([8082730](https://github.com/untrustedmodders/plugify-metamod-loader/commit/8082730f1996186cdf5f75587f5fc2f3946b2241))
+
 ## [2.1.5](https://github.com/untrustedmodders/plugify-metamod-loader/compare/v2.1.4...v2.1.5) (2026-11-10)
 
 
