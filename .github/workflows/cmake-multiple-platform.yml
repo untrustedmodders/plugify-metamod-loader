@@ -113,9 +113,10 @@ jobs:
       - name: Prepare artifacts
         shell: bash -el {0}
         run: |
-          mkdir -p build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
-          cp build/*plugify.* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
-          cp build/micromamba* build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
+          PLG_DIR=build/output/csgo/addons/plugify/bin/${{ matrix.platform }}/
+          mkdir -p $PLG_DIR
+          cp build/*plugify.* $PLG_DIR
+          cp build/micromamba* $PLG_DIR
           cp -r build/addons build/output/csgo
           # cp build/plugify.pconfig build/output/csgo
           # Cleanup dev files
